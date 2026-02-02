@@ -1,0 +1,27 @@
+#server:
+#  port: 8888
+#
+#spring:
+#  profiles:
+#    active: native
+#  cloud:
+#    config:
+#      server:
+#        native:
+#          search-locations: file:C:\Users\ASUS\Documents\Application\config-repo
+server:
+  port: 8888
+
+
+spring:
+  profiles:
+    active: git
+  cloud:
+    config:
+      server:
+        git:
+          uri: https://gitlab.com/chrea.tongsure.dev/config-repo.git
+          username: chrea.tongsure.dev
+          password: glpat-GuqcM9y6nhD8dSOwMHGooW86MQp1Oml0djVzCw.01.1218dwdrx
+          default-label: master
+

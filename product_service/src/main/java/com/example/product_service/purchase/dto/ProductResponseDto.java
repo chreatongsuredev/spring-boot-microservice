@@ -1,0 +1,16 @@
+package com.example.product_service.purchase.dto;
+
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.experimental.FieldDefaults;
+
+import java.math.BigDecimal;
+
+@Setter
+@Getter
+@FieldDefaults(level = AccessLevel.PRIVATE)
+public class ProductResponseDto {
+    String prodId;
+    BigDecimal prodPrice;
+}

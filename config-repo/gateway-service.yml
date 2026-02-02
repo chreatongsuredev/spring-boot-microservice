@@ -1,0 +1,25 @@
+spring:
+  application:
+    name: gateway-service
+  cloud:
+    gateway:
+      routes:
+        - id: auth-service
+          uri: http://localhost:8081   #auth service authentication-service
+          predicates:
+            - Path=/MyAuth/**
+#          filters:
+#            - RewritePath=/MyAuth/(?<segment>.*), /${segment}
+
+        - id: product-service
+          uri: http://localhost:8083   #product service
+          predicates:
+            - Path=/prod/**
+#
+#        - id: mail-service
+#          uri: http://mails-service  #mail service
+#          predicates:
+#            - Path=/mailservice/**
+
+server:
+  port: 8085

@@ -1,0 +1,88 @@
+pipeline {
+    agent any
+    environment {
+        DOCKER_IMAGE = "chreatongsure/gateway"
+        DOCKER_TAG = "build-${env.BUILD_NUMBER}"
+        DOCKER_CREDENTIALS_ID = "dockerhub-cred"
+        NAMESPACE = "default"
+    }
+
+    stages {
+        stage('Hello World') {
+            steps {
+                echo 'Hello, World '
+            }
+        }
+
+        stage('Build') {
+            steps {
+                sh 'mvn clean package -DskipTests'
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    sh "docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} ."
+                }
+            }
+        }
+
+        stage('Push Docker Image') {
+            steps {
+                script {
+                    withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                        sh '''
+                            echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
+                            docker tag chreatongsure/gateway:build-${BUILD_NUMBER} $DOCKER_USER/gateway:build-${BUILD_NUMBER}
+                            docker push $DOCKER_USER/gateway:build-${BUILD_NUMBER}
+                        '''
+                    }
+                }
+            }
+        }
+        stage('Deploy to Minikube') {
+            steps {
+                withKubeConfig(
+                    credentialsId: 'cluster-token',  // This is your uploaded kubeconfig
+                    restrictKubeConfigAccess: false
+                ) {
+                    sh """
+                         for file in *.yaml; do
+                        envsubst < "\$file" | kubectl apply -f - -n ${NAMESPACE}
+                    done
+                    """
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            script {
+                def message = "✅ Jenkins Build Succeeded:\nJob: ${env.JOB_NAME}\nBuild #${env.BUILD_NUMBER}"
+                def url = "https://api.telegram.org/bot6803035188:AAFqKzebTpZ6tE7LgZ9iHLiPpiB8q9e3S_k/sendMessage"
+                def payload = "chat_id=-4610843159&text=${URLEncoder.encode(message, 'UTF-8')}"
+
+                sh """
+                    curl -s -X POST "${url}" \
+                    -H "Content-Type: application/x-www-form-urlencoded" \
+                    -d "${payload}"
+                """
+            }
+        }
+        failure {
+            script {
+                def message = "❌ Jenkins Build Failed:\nJob: ${env.JOB_NAME}\nBuild #${env.BUILD_NUMBER}"
+                def url = "https://api.telegram.org/bot6803035188:AAFqKzebTpZ6tE7LgZ9iHLiPpiB8q9e3S_k/sendMessage"
+                def payload = "chat_id=-4610843159&text=${URLEncoder.encode(message, 'UTF-8')}"
+
+                sh """
+                    curl -s -X POST "${url}" \
+                    -H "Content-Type: application/x-www-form-urlencoded" \
+                    -d "${payload}"
+                """
+            }
+        }
+    }
+}
